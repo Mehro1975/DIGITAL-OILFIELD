@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeakWatch - Pipeline Leak Detection Interface</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary-bg: #ffffff;
+            --secondary-bg: #f5f7fa;
+            --panel-bg: #ffffff;
+            --text-primary: #333333;
+            --text-secondary: #6c757d;
+            --accent-blue: #0063cc;
+            --accent-green: #00a046;
+            --accent-yellow: #ffc107;
+            --accent-red: #dc3545;
+            --panel-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --header-bg: #003b7a;
+            --header-text: #ffffff;
+            --button-primary: #f89c1c;
+            --button-hover: #e68a00;
+        }
+        
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            grid-template-rows: 60px 1fr;
+            grid-template-areas:
+                "header header"
+                "sidebar main";
+            overflow: hidden;
+        }
+        
+        header {
+            grid-area: header;
+            background-color: var(--header-bg);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            color: var(--header-text);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .logo-highlight {
+            color: var(--button-primary);
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .status-online {
+            background-color: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+        }
+        
+        aside {
+            grid-area: sidebar;
+            background-color: var(--secondary-bg);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            border-right: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: var(--panel-shadow);
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .stat-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: var(--accent-blue);
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        .alerts-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-height: 400px;
+        }
+        
+        .alerts-container {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .alert-item {
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 4px solid;
+            animation: fadeIn 0.5s ease-in;
+            cursor: pointer;
+            transition: transform 0.2s;
+            background-color: #ffffff;
+        }
+        
+        .alert-item:hover {
+            transform: translateX(5px);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .alert-minor {
+            background-color: rgba(255, 214, 0, 0.1);
+            border-left-color: var(--accent-yellow);
+        }
+        
+        .alert-critical {
+            background-color: rgba(220, 53, 69, 0.1);
+            border-left-color: var(--accent-red);
+        }
+        
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .alert-title {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .alert-severity {
+            font-size: 0.7rem;
+            padding: 3px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        
+        .severity-minor {
+            background-color: var(--accent-yellow);
+            color: #212529;
+        }
+        
+        .severity-critical {
+            background-color: var(--accent-red);
+            color: white;
+        }
+        
+        .alert-time {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        .alert-location {
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+        
+        .alert-message {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        main {
+            grid-area: main;
+            position: relative;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        .control-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            width: 300px;
+            background-color: var(--panel-bg);
+            border-radius: 10px;
+            box-shadow: var(--panel-shadow);
+            padding: 15px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-label {
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            display: block;
+        }
+        
+        .detection-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #e9ecef;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--accent-blue);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+        
+        button {
+            cursor: pointer;
+            padding: 8px 15px;
+            background-color: var(--button-primary);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: var(--button-hover);
+        }
+        
+        .simulation-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .tooltip-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            max-width: 350px;
+            background-color: var(--panel-bg);
+            border-radius: 10px;
+            box-shadow: var(--panel-shadow);
+            padding: 15px;
+            display: none;
+        }
+        
+        .tooltip-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        
+        .tooltip-icon {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: var(--accent-red);
+            font-size: 1.2rem;
+            color: white;
+        }
+        
+        .tooltip-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+        
+        .tooltip-content {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+        
+        .tooltip-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-secondary {
+            background-color: transparent;
+            border: 1px solid var(--accent-blue);
+            color: var(--accent-blue);
+        }
+        
+        .btn-secondary:hover {
+            background-color: rgba(0, 99, 204, 0.1);
+        }
+        
+        .notification-sound {
+            display: none;
+        }
+        
+        @media (max-width: 1024px) {
+            body {
+                grid-template-columns: 1fr;
+                grid-template-rows: 60px 1fr;
+                grid-template-areas:
+                    "header"
+                    "main";
+            }
+            
+            aside {
+                display: none;
+            }
+        }
+        
+        /* Chart styles */
+        .chart-container {
+            width: 100%;
+            height: 180px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <h1><span class="logo-highlight">Digital</span>Oilfield</h1>
+        </div>
+        <div class="status-indicator">
+            <div class="system-status">
+                <div class="status-dot status-online"></div>
+                <span>System Online</span>
+            </div>
+        </div>
+    </header>
+    
+    <aside>
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">System Overview</div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-leaks">0</div>
+                    <div class="stat-label">Leaks Detected</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="critical-leaks">0</div>
+                    <div class="stat-label">Critical Leaks</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">98.2%</div>
+                    <div class="stat-label">System Uptime</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">97.5%</div>
+                    <div class="stat-label">Detection Rate</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">Leak Severity Trend</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="severityChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="panel alerts-panel">
+            <div class="panel-header">
+                <div class="panel-title">Recent Alerts</div>
+                <button id="clear-alerts">Clear</button>
+            </div>
+            <div class="alerts-container" id="alerts-container"></div>
+        </div>
+    </aside>
+    
+    <main>
+        <div id="map"></div>
+        
+        <div class="control-panel">
+            <div class="control-group">
+                <h3 class="panel-title">Detection Controls</h3>
+                <div class="detection-toggle">
+                    <span>AI-Powered Detection</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="ai-detection" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3 class="panel-title">Simulation</h3>
+                <div class="simulation-controls">
+                    <button id="simulate-leak">Simulate Leak</button>
+                    <button id="reset-simulation">Reset</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tooltip-panel" id="leak-details">
+            <div class="tooltip-header">
+                <div class="tooltip-icon">!</div>
+                <div class="tooltip-title">Leak Detected</div>
+            </div>
+            <div class="tooltip-content">
+                <p id="leak-info">A pipeline leak has been detected. The system has identified a potential issue requiring immediate attention.</p>
+                <p id="leak-coordinates" class="alert-location">Coordinates: 0.0000, 0.0000</p>
+            </div>
+            <div class="tooltip-buttons">
+                <button id="dispatch-team">Dispatch Team</button>
+                <button class="btn-secondary" id="dismiss-alert">Dismiss</button>
+            </div>
+        </div>
+    </main>
+    
+    <audio id="alert-sound" class="notification-sound">
+        <source src="/api/placeholder/400/320" type="audio/mpeg">
+    </audio>
+    
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([37.7749, -122.4194], 10);
+        
+        // Add light theme map tiles
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+        
+        // Pipeline data
+        const pipelineData = [
+            {
+                name: "North Bay Pipeline",
+                path: [
+                    [37.7749, -122.4194], // San Francisco
+                    [37.8044, -122.2711], // Oakland
+                    [38.1074, -122.2569], // Vallejo
+                    [38.2975, -122.2869]  // Napa
+                ],
+                color: "#0063cc",
+                riskFactor: 1.2
+            },
+            {
+                name: "South Bay Pipeline",
+                path: [
+                    [37.7749, -122.4194], // San Francisco
+                    [37.7576, -122.3076], // Alameda
+                    [37.6688, -122.0808], // Hayward
+                    [37.5483, -121.9886], // Fremont
+                    [37.3541, -121.9552]  // San Jose
+                ],
+                color: "#00a046",
+                riskFactor: 0.8
+            },
+            {
+                name: "East Bay Network",
+                path: [
+                    [37.8044, -122.2711], // Oakland
+                    [37.9030, -122.0700], // Concord
+                    [37.9577, -121.2950]  // Stockton
+                ],
+                color: "#f89c1c",
+                riskFactor: 1.5
+            }
+        ];
+        
+        // Draw pipelines
+        const pipelines = [];
+        pipelineData.forEach(pipeline => {
+            const line = L.polyline(pipeline.path, {
+                color: pipeline.color,
+                weight: 4,
+                opacity: 0.8
+            }).addTo(map);
+            
+            line.bindTooltip(pipeline.name);
+            pipelines.push({
+                line: line,
+                data: pipeline
+            });
+        });
+        
+        // Variables for leak simulation
+        let leakMarkers = [];
+        let alertCount = 0;
+        let criticalCount = 0;
+        let simulationInterval;
+        
+        // Chart initialization
+        const ctx = document.getElementById('severityChart').getContext('2d');
+        const chartData = {
+            labels: Array.from({length: 7}, (_, i) => `Day ${i+1}`),
+            datasets: [{
+                label: 'Minor Leaks',
+                data: [0, 0, 0, 0, 0, 0, 0],
+                backgroundColor: 'rgba(255, 193, 7, 0.5)',
+                borderColor: 'rgba(255, 193, 7, 1)',
+                borderWidth: 1
+            }, {
+                label: 'Critical Leaks',
+                data: [0, 0, 0, 0, 0, 0, 0],
+                backgroundColor: 'rgba(220, 53, 69, 0.5)',
+                borderColor: 'rgba(220, 53, 69, 1)',
+                borderWidth: 1
+            }]
+        };
+        
+        const severityChart = new Chart(ctx, {
+            type: 'bar',
+            data: chartData,
+            options: {
+                scales: {
+                    x: {
+                        stacked: true,
+                        ticks: {
+                            color: '#6c757d'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        max: 5,
+                        ticks: {
+                            color: '#6c757d',
+                            stepSize: 1
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#333333'
+                        }
+                    }
+                },
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 1000
+                }
+            }
+        });
+        
+        // Generate a random point along a pipeline
+        function getRandomPointOnPipeline() {
+            const randomPipeline = pipelines[Math.floor(Math.random() * pipelines.length)];
+            const path = randomPipeline.data.path;
+            const segmentIndex = Math.floor(Math.random() * (path.length - 1));
+            
+            const start = path[segmentIndex];
+            const end = path[segmentIndex + 1];
+            
+            const t = Math.random(); // Value between 0 and 1
+            
+            // Linear interpolation between start and end
+            const lat = start[0] + (end[0] - start[0]) * t;
+            const lng = start[1] + (end[1] - start[1]) * t;
+            
+            return {
+                coordinates: [lat, lng],
+                pipeline: randomPipeline.data.name,
+                riskFactor: randomPipeline.data.riskFactor
+            };
+        }
+        
+        // Create a leak marker at the specified coordinates
+        function createLeakMarker(coordinates, severity, pipeline) {
+            // Determine icon based on severity
+            const iconColor = severity === 'critical' ? '#dc3545' : '#ffc107';
+            const iconSize = severity === 'critical' ? 14 : 10;
+            
+            const leakIcon = L.divIcon({
+                html: `<div style="width: ${iconSize}px; height: ${iconSize}px; background-color: ${iconColor}; border-radius: 50%; box-shadow: 0 0 10px ${iconColor};"></div>`,
+                className: '',
+                iconSize: [iconSize, iconSize]
+            });
+            
+            const marker = L.marker(coordinates, { icon: leakIcon }).addTo(map);
+            
+            // Add pulsing animation
+            const pulseRadius = severity === 'critical' ? 60 : 40;
+            const pulseCircle = L.circleMarker(coordinates, {
+                radius: 1,
+                color: iconColor,
+                fillColor: iconColor,
+                fillOpacity: 0.3,
+                weight: 1
+            }).addTo(map);
+            
+            // Animate the pulse
+            let currentRadius = 1;
+            const pulse = setInterval(() => {
+                currentRadius += 1;
+                pulseCircle.setRadius(currentRadius);
+                pulseCircle.setStyle({
+                    fillOpacity: Math.max(0.3 - (currentRadius / pulseRadius), 0)
+                });
+                
+                if (currentRadius >= pulseRadius) {
+                    currentRadius = 1;
+                    pulseCircle.setRadius(currentRadius);
+                    pulseCircle.setStyle({ fillOpacity: 0.3 });
+                }
+            }, 50);
+            
+            marker.on('click', () => {
+                showLeakDetails(coordinates, severity, pipeline);
+            });
+            
+            return { marker, pulseCircle, pulseInterval: pulse };
+        }
+        
+        // Show leak details panel
+        function showLeakDetails(coordinates, severity, pipeline) {
+            const leakDetails = document.getElementById('leak-details');
+            const leakInfo = document.getElementById('leak-info');
+            const leakCoordinates = document.getElementById('leak-coordinates');
+            
+            leakInfo.textContent = `A ${severity} pipeline leak has been detected on the ${pipeline}. The system has identified a potential issue requiring ${severity === 'critical' ? 'immediate' : 'prompt'} attention.`;
+            leakCoordinates.textContent = `Coordinates: ${coordinates[0].toFixed(4)}, ${coordinates[1].toFixed(4)}`;
+            
+            leakDetails.style.display = 'block';
+            
+            // Focus map on leak
+            map.setView(coordinates, 13);
+        }
+        
+        // Generate a leak alert
+        function generateLeakAlert(coordinates, severity, pipeline) {
+            const alertsContainer = document.getElementById('alerts-container');
+            const timestamp = new Date();
+            const timeString = timestamp.toLocaleTimeString();
+            
+            // Create alert element
+            const alertElement = document.createElement('div');
+            alertElement.className = `alert-item alert-${severity}`;
+            alertElement.innerHTML = `
+                <div class="alert-header">
+                    <div class="alert-title">
+                        <span>Leak Detected</span>
+                        <span class="alert-severity severity-${severity}">${severity}</span>
+                    </div>
+                    <div class="alert-time">${timeString}</div>
+                </div>
+                <div class="alert-location">Pipeline: ${pipeline}</div>
+                <div class="alert-message">Coordinates: ${coordinates[0].toFixed(4)}, ${coordinates[1].toFixed(4)}</div>
+            `;
+            
+            // Add click handler to focus on leak
+            alertElement.addEventListener('click', () => {
+                map.setView(coordinates, 13);
+                showLeakDetails(coordinates, severity, pipeline);
+            });
+            
+            // Add to alerts container
+            alertsContainer.prepend(alertElement);
+            
+            // Update counters
+            alertCount++;
+            if (severity === 'critical') {
+                criticalCount++;
+            }
+            
+            document.getElementById('total-leaks').textContent = alertCount;
+            document.getElementById('critical-leaks').textContent = criticalCount;
+            
+            // Update chart
+            const todayIndex = chartData.labels.length - 1;
+            if (severity === 'critical') {
+                chartData.datasets[1].data[todayIndex]++;
+            } else {
+                chartData.datasets[0].data[todayIndex]++;
+            }
+            severityChart.update();
+            
+            // Play notification sound
+            try {
+                document.getElementById('alert-sound').play();
+            } catch (e) {
+                console.log("Sound play error:", e);
+            }
+        }
+        
+        // Simulate a leak
+        function simulateLeak(manual = false) {
+            // Check if AI detection is enabled
+            if (!manual && !document.getElementById('ai-detection').checked) {
+                return;
+            }
+            
+            const leakPoint = getRandomPointOnPipeline();
+            const coordinates = leakPoint.coordinates;
+            const pipeline = leakPoint.pipeline;
+            
+            // Determine severity based on risk factor and randomness
+            const riskBase = leakPoint.riskFactor;
+            const randomFactor = Math.random();
+            const severity = (randomFactor * riskBase > 0.7) ? 'critical' : 'minor';
+            
+            // Create marker
+            const leakMarker = createLeakMarker(coordinates, severity, pipeline);
+            leakMarkers.push(leakMarker);
+            
+            // Generate alert
+            generateLeakAlert(coordinates, severity, pipeline);
+            
+            // Show leak details if manual or critical
+            if (manual || severity === 'critical') {
+                showLeakDetails(coordinates, severity, pipeline);
+            }
+        }
+        
+        // Start automatic leak simulation
+        function startSimulation() {
+            if (simulationInterval) {
+                clearInterval(simulationInterval);
+            }
+            
+            // Random interval between 20-60 seconds
+            simulationInterval = setInterval(() => {
+                // Only 30% chance of leak per interval
+                if (Math.random() < 0.3) {
+                    simulateLeak();
+                }
+            }, 20000);
+        }
+        
+        // Clear all leaks
+        function clearLeaks() {
+            leakMarkers.forEach(marker => {
+                map.removeLayer(marker.marker);
+                map.removeLayer(marker.pulseCircle);
+                clearInterval(marker.pulseInterval);
+            });
+            leakMarkers = [];
+            
+            // Hide leak details panel
+            document.getElementById('leak-details').style.display = 'none';
+        }
+        
+        // Event Listeners
+        document.getElementById('simulate-leak').addEventListener('click', () => {
+            simulateLeak(true);
+        });
+        
+        document.getElementById('reset-simulation').addEventListener('click', () => {
+            clearLeaks();
+        });
+        
+        document.getElementById('clear-alerts').addEventListener('click', () => {
+            document.getElementById('alerts-container').innerHTML = '';
+        });
+        
+        document.getElementById('dismiss-alert').addEventListener('click', () => {
+            document.getElementById('leak-details').style.display = 'none';
+        });
+        
+        document.getElementById('dispatch-team').addEventListener('click', () => {
+            alert('Response team dispatched!');
+            document.getElementById('leak-details').style.display = 'none';
+        });
+        
+        // Initialize simulation
+        startSimulation();
+    </script>
+</body>
+</html>

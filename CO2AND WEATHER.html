@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Oil Platform Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        background-color: #f5f7fa;
+        color: #333;
+        padding: 20px;
+      }
+
+      header {
+        background-color: #2c3e50;
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .dashboard-title {
+        font-size: 24px;
+        font-weight: bold;
+      }
+
+      .dashboard-date {
+        font-size: 14px;
+      }
+
+      .content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      @media (max-width: 1024px) {
+        .content {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      .card-title {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        color: #2c3e50;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .card-title button {
+        padding: 5px 10px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      @media (max-width: 768px) {
+        form {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+
+      button {
+        padding: 10px 15px;
+        background-color: #2ecc71;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s;
+      }
+
+      button:hover {
+        background-color: #27ae60;
+      }
+
+      .chart-container {
+        height: 300px;
+        margin-bottom: 20px;
+      }
+
+      .alert {
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+        font-weight: 500;
+      }
+
+      .alert-danger {
+        background-color: #fee2e2;
+        color: #b91c1c;
+        border-left: 4px solid #b91c1c;
+      }
+
+      .alert-warning {
+        background-color: #fef3c7;
+        color: #92400e;
+        border-left: 4px solid #d97706;
+      }
+
+      .alert-success {
+        background-color: #d1fae5;
+        color: #065f46;
+        border-left: 4px solid #059669;
+      }
+
+      .tips-container {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #e8f4fd;
+        border-radius: 4px;
+        border-left: 4px solid #3498db;
+      }
+
+      .tips-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #2c3e50;
+      }
+
+      .tips-list {
+        list-style-type: none;
+      }
+
+      .tips-list li {
+        margin-bottom: 8px;
+        padding-left: 20px;
+        position: relative;
+      }
+
+      .tips-list li:before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        color: #3498db;
+      }
+
+      .weather-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .weather-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .weather-icon {
+        font-size: 48px;
+        width: 64px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .weather-details h3 {
+        font-size: 18px;
+        margin-bottom: 5px;
+      }
+
+      .weather-details p {
+        font-size: 14px;
+        color: #64748b;
+      }
+
+      .impact-list {
+        list-style-type: none;
+        margin-top: 10px;
+      }
+
+      .impact-list li {
+        margin-bottom: 8px;
+        padding-left: 20px;
+        position: relative;
+      }
+
+      .impact-list li:before {
+        content: "→";
+        position: absolute;
+        left: 0;
+        color: #64748b;
+      }
+
+      .emergency-response {
+        margin-top: 15px;
+        padding: 15px;
+        background-color: #fef2f2;
+        border-radius: 4px;
+        border-left: 4px solid #ef4444;
+        display: none;
+      }
+
+      .emergency-response.active {
+        display: block;
+      }
+
+      .summary-values {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .summary-item {
+        background-color: #f1f5f9;
+        padding: 15px;
+        border-radius: 4px;
+        text-align: center;
+      }
+
+      .summary-item p {
+        font-size: 14px;
+        color: #64748b;
+        margin-bottom: 5px;
+      }
+
+      .summary-item h3 {
+        font-size: 24px;
+        color: #2c3e50;
+      }
+
+      .anomaly {
+        color: #ef4444;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="dashboard-title">Oil Platform Dashboard</div>
+      <div class="dashboard-date" id="current-date"></div>
+    </header>
+
+    <div class="content">
+      <!-- CO2 Emission Tracker Section -->
+      <div class="card">
+        <div class="card-title">
+          CO₂ Emission Tracker
+          <button id="reset-co2-data">Reset Data</button>
+        </div>
+
+        <div class="summary-values">
+          <div class="summary-item">
+            <p>Today's Emissions</p>
+            <h3 id="today-emissions">0 kg</h3>
+          </div>
+          <div class="summary-item">
+            <p>Weekly Average</p>
+            <h3 id="weekly-average">0 kg</h3>
+          </div>
+          <div class="summary-item">
+            <p>Status</p>
+            <h3 id="emission-status">Normal</h3>
+          </div>
+        </div>
+
+        <form id="co2-form">
+          <div class="form-group">
+            <label for="oil-output">Oil Output (barrels)</label>
+            <input type="number" id="oil-output" min="0" step="0.1" required />
+          </div>
+          <div class="form-group">
+            <label for="leak-detected">Leak Detected?</label>
+            <select id="leak-detected">
+              <option value="no">No</option>
+              <option value="minor">Minor Leak</option>
+              <option value="major">Major Leak</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date" id="date" required />
+          </div>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <button type="submit">Calculate Emissions</button>
+          </div>
+        </form>
+
+        <div class="chart-container">
+          <canvas id="emissions-chart"></canvas>
+        </div>
+
+        <div id="anomaly-alert"></div>
+
+        <div class="tips-container">
+          <div class="tips-title">AI-Generated Emission Reduction Tips</div>
+          <ul class="tips-list" id="emission-tips">
+            <li>
+              Enter production data to receive customized emission reduction
+              tips.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+<!-- Weather Impact Prediction Section -->
+<div class="card">
+    <div class="card-title">Weather Impact Prediction</div>
+  
+    <form id="weather-form">
+      <div class="form-group">
+        <label for="latitude">Latitude</label>
+        <input
+          type="text"
+          id="latitude"
+          placeholder="e.g. 57.1482"
+          required
+        />
+      </div>
+      <div class="form-group">
+        <label for="longitude">Longitude</label>
+        <input
+          type="text"
+          id="longitude"
+          placeholder="e.g. -3.0842"
+          required
+        />
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button type="submit">Fetch Weather Data</button>
+      </div>
+    </form>
+  
+    <div class="weather-container" id="weather-container">
+      <div class="alert alert-warning">
+        Enter coordinates to fetch weather data and predictions.
+      </div>
+    </div>
+  
+    <div class="emergency-response" id="emergency-response">
+      <h3>Emergency Response Required</h3>
+      <p>
+        Severe weather conditions detected. Consider the following actions:
+      </p>
+      <ul class="impact-list">
+        <li>Secure all loose equipment on the platform</li>
+        <li>Prepare evacuation protocols if conditions worsen</li>
+        <li>Reduce non-essential operations</li>
+        <li>Increase monitoring frequency of all systems</li>
+      </ul>
+    </div>
+  </div>
+
+    <script>
+      // Initialize date
+      document.getElementById("current-date").textContent =
+        new Date().toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+
+      // Set default date to today
+      document.getElementById("date").valueAsDate = new Date();
+
+      // CO2 Emissions Tracking
+      const EMISSION_FACTOR = 0.43; // kg CO2 per barrel of oil
+      let emissionsData = {
+        dates: [],
+        emissions: [],
+        anomalies: [],
+      };
+
+      // Initialize emissions chart
+      const emissionsCtx = document
+        .getElementById("emissions-chart")
+        .getContext("2d");
+      const emissionsChart = new Chart(emissionsCtx, {
+        type: "bar",
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: "CO₂ Emissions (kg)",
+              data: [],
+              backgroundColor: [],
+              borderColor: [],
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "CO₂ Emissions (kg)",
+              },
+            },
+            x: {
+              title: {
+                display: true,
+                text: "Date",
+              },
+            },
+          },
+        },
+      });
+
+      // CO2 Form Handler
+      document
+        .getElementById("co2-form")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          const oilOutput = parseFloat(
+            document.getElementById("oil-output").value
+          );
+          const leakDetected = document.getElementById("leak-detected").value;
+          const date = document.getElementById("date").value;
+
+          // Calculate base emissions
+          let emissions = oilOutput * EMISSION_FACTOR;
+          let isAnomaly = false;
+
+          // Adjust for leaks
+          if (leakDetected === "minor") {
+            emissions *= 1.2; // 20% increase for minor leaks
+            isAnomaly = true;
+          } else if (leakDetected === "major") {
+            emissions *= 1.5; // 50% increase for major leaks
+            isAnomaly = true;
+          }
+
+          // Update emissions data
+          const formattedDate = new Date(date).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          });
+
+          // Check if date already exists
+          const existingIndex = emissionsData.dates.indexOf(formattedDate);
+          if (existingIndex !== -1) {
+            emissionsData.emissions[existingIndex] = emissions;
+            emissionsData.anomalies[existingIndex] = isAnomaly;
+          } else {
+            emissionsData.dates.push(formattedDate);
+            emissionsData.emissions.push(emissions);
+            emissionsData.anomalies.push(isAnomaly);
+          }
+
+          updateEmissionsChart();
+          updateEmissionsSummary();
+          generateEmissionTips(oilOutput, leakDetected, emissions);
+          showAnomalyAlert(isAnomaly, emissions, leakDetected);
+        });
+
+      // Reset CO2 Data
+      document
+        .getElementById("reset-co2-data")
+        .addEventListener("click", function () {
+          emissionsData = {
+            dates: [],
+            emissions: [],
+            anomalies: [],
+          };
+          updateEmissionsChart();
+          updateEmissionsSummary();
+          document.getElementById("anomaly-alert").innerHTML = "";
+          document.getElementById("emission-tips").innerHTML =
+            "<li>Enter production data to receive customized emission reduction tips.</li>";
+        });
+
+      // Update Emissions Chart
+      function updateEmissionsChart() {
+        const backgroundColor = emissionsData.anomalies.map((isAnomaly) =>
+          isAnomaly ? "rgba(239, 68, 68, 0.7)" : "rgba(52, 152, 219, 0.7)"
+        );
+
+        const borderColor = emissionsData.anomalies.map((isAnomaly) =>
+          isAnomaly ? "rgba(185, 28, 28, 1)" : "rgba(41, 128, 185, 1)"
+        );
+
+        emissionsChart.data.labels = emissionsData.dates;
+        emissionsChart.data.datasets[0].data = emissionsData.emissions;
+        emissionsChart.data.datasets[0].backgroundColor = backgroundColor;
+        emissionsChart.data.datasets[0].borderColor = borderColor;
+        emissionsChart.update();
+      }
+
+      // Update Emissions Summary
+      function updateEmissionsSummary() {
+        if (emissionsData.emissions.length === 0) {
+          document.getElementById("today-emissions").textContent = "0 kg";
+          document.getElementById("weekly-average").textContent = "0 kg";
+          document.getElementById("emission-status").textContent = "Normal";
+          document
+            .getElementById("emission-status")
+            .classList.remove("anomaly");
+          return;
+        }
+
+        // Today's emissions (last entry)
+        const todayEmissions =
+          emissionsData.emissions[emissionsData.emissions.length - 1];
+        document.getElementById(
+          "today-emissions"
+        ).textContent = `${todayEmissions.toFixed(2)} kg`;
+
+        // Weekly average (up to last 7 entries)
+        const recentEmissions = emissionsData.emissions.slice(-7);
+        const weeklyAverage =
+          recentEmissions.reduce((sum, emission) => sum + emission, 0) /
+          recentEmissions.length;
+        document.getElementById(
+          "weekly-average"
+        ).textContent = `${weeklyAverage.toFixed(2)} kg`;
+
+        // Status
+        const latestAnomaly =
+          emissionsData.anomalies[emissionsData.anomalies.length - 1];
+        if (latestAnomaly) {
+          document.getElementById("emission-status").textContent =
+            "Anomaly Detected";
+          document.getElementById("emission-status").classList.add("anomaly");
+        } else {
+          document.getElementById("emission-status").textContent = "Normal";
+          document
+            .getElementById("emission-status")
+            .classList.remove("anomaly");
+        }
+      }
+
+      // Show Anomaly Alert
+      function showAnomalyAlert(isAnomaly, emissions, leakType) {
+        const alertContainer = document.getElementById("anomaly-alert");
+        alertContainer.innerHTML = "";
+
+        if (isAnomaly) {
+          const alertClass =
+            leakType === "major" ? "alert-danger" : "alert-warning";
+          const alertMessage =
+            leakType === "major"
+              ? `<strong>Major Leak Detected!</strong> This has increased your CO₂ emissions by 50% to ${emissions.toFixed(
+                  2
+                )} kg.`
+              : `<strong>Minor Leak Detected!</strong> This has increased your CO₂ emissions by 20% to ${emissions.toFixed(
+                  2
+                )} kg.`;
+
+          alertContainer.innerHTML = `<div class="alert ${alertClass}">${alertMessage} Immediate inspection recommended.</div>`;
+        } else if (emissions > 100) {
+          alertContainer.innerHTML = `<div class="alert alert-warning">High emissions detected (${emissions.toFixed(
+            2
+          )} kg). Consider optimizing operations.</div>`;
+        } else {
+          alertContainer.innerHTML = `<div class="alert alert-success">Normal emission levels (${emissions.toFixed(
+            2
+          )} kg).</div>`;
+        }
+      }
+
+      // Generate Emission Tips
+      function generateEmissionTips(oilOutput, leakDetected, emissions) {
+        const tipsContainer = document.getElementById("emission-tips");
+        const tips = [];
+
+        // Base tips
+        tips.push(
+          "Schedule regular maintenance checks to prevent equipment deterioration."
+        );
+        tips.push(
+          "Implement real-time monitoring systems for early leak detection."
+        );
+
+        // Production-specific tips
+        if (oilOutput > 200) {
+          tips.push(
+            "Consider phased production to reduce peak emission periods."
+          );
+        }
+
+        // Leak-specific tips
+        if (leakDetected !== "no") {
+          tips.push(
+            "Conduct immediate equipment inspection to identify and fix leak sources."
+          );
+          tips.push(
+            "Review valve integrity and implement predictive maintenance protocols."
+          );
+
+          if (leakDetected === "major") {
+            tips.push(
+              "Temporarily reduce production until leak is contained to minimize environmental impact."
+            );
+            tips.push(
+              "Deploy specialized leak containment equipment to prevent further emissions."
+            );
+          }
+        }
+
+        // Emission-level specific tips
+        if (emissions > 150) {
+          tips.push(
+            "Consider upgrading to more efficient equipment with lower emission profiles."
+          );
+          tips.push(
+            "Implement carbon capture technologies for high-emission operations."
+          );
+        } else if (emissions < 50) {
+          tips.push(
+            "Current emission levels are relatively low. Maintain current best practices."
+          );
+        }
+
+        // Randomly select 3-5 tips to display
+        const shuffledTips = tips.sort(() => 0.5 - Math.random());
+        const selectedTips = shuffledTips.slice(0, Math.min(4, tips.length));
+
+        tipsContainer.innerHTML = selectedTips
+          .map((tip) => `<li>${tip}</li>`)
+          .join("");
+      }
+
+// Weather Impact Prediction
+let cachedWeatherData = null;
+
+document
+  .getElementById("weather-form")
+  .addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const latitude = document.getElementById("latitude").value;
+    const longitude = document.getElementById("longitude").value;
+    
+    // Use the hardcoded API key
+    const apiKey = "4e03343db131faf55a863b08bbb1171e";
+
+    // If we have cached data for these coordinates, use it
+    if (cachedWeatherData && 
+        cachedWeatherData.lat === latitude && 
+        cachedWeatherData.lon === longitude) {
+      displayWeatherData(cachedWeatherData.data);
+      return;
+    }
+
+    fetchWeatherData(latitude, longitude, apiKey);
+  });
+
+function fetchWeatherData(lat, lon, apiKey) {
+  const weatherContainer = document.getElementById("weather-container");
+
+  // Show loading state
+  weatherContainer.innerHTML = `<div class="alert alert-warning">Loading weather data...</div>`;
+
+  const apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+
+  fetch(apiUrl)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      // Cache the data
+      cachedWeatherData = {
+        lat: lat,
+        lon: lon,
+        data: data
+      };
+      displayWeatherData(data);
+    })
+    .catch((error) => {
+      console.error("Weather API error:", error);
+      let errorMessage = error.message;
+
+      if (error.message.includes("400")) {
+        errorMessage = "Invalid request. Please check your coordinates (latitude between -90 and 90, longitude between -180 and 180).";
+      } else if (error.message.includes("401")) {
+        errorMessage = "Unauthorized. The API key is invalid.";
+      } else if (error.message.includes("429")) {
+        errorMessage = "Too many requests. API call limit exceeded.";
+      }
+
+      weatherContainer.innerHTML = `
+        <div class="alert alert-danger">
+          <strong>Error fetching weather data:</strong> ${errorMessage}
+        </div>
+      `;
+    });
+}
+
+function displayWeatherData(data) {
+  const weatherContainer = document.getElementById("weather-container");
+  
+  // Process the weather data
+  const weather = {
+    main: data.weather[0].main,
+    description: data.weather[0].description,
+    temp: data.main.temp,
+    wind: data.wind.speed,
+    icon: getWeatherIcon(data.weather[0].main),
+  };
+
+  // Determine impact level based on actual conditions
+  weather.impact = determineImpactLevel(weather.main, weather.wind);
+
+  // Generate impacts based on weather
+  let impacts = getImpactsForWeather(weather.impact);
+
+  // Update emergency response visibility
+  const emergencyResponse = document.getElementById("emergency-response");
+  if (weather.impact === "high" || weather.impact === "severe") {
+    emergencyResponse.classList.add("active");
+  } else {
+    emergencyResponse.classList.remove("active");
+  }
+
+  // Update weather container with data
+  weatherContainer.innerHTML = `
+    <div class="weather-info">
+      <div class="weather-icon">${weather.icon}</div>
+      <div class="weather-details">
+        <h3>${weather.main} (${weather.description})</h3>
+        <p>Temperature: ${weather.temp.toFixed(1)}°C | Wind: ${weather.wind.toFixed(1)} m/s</p>
+        <p>Location: ${data.coord.lat}, ${data.coord.lon}</p>
+      </div>
+    </div>
+    
+    <div class="alert ${getAlertClassForImpact(weather.impact)}">
+      <strong>Impact Level: ${weather.impact.toUpperCase()}</strong> - Weather conditions show ${weather.impact} risk to operations.
+    </div>
+    
+    <div>
+      <h3>Predicted Operational Impacts:</h3>
+      <ul class="impact-list">
+        ${impacts.map((impact) => `<li>${impact}</li>`).join("")}
+      </ul>
+    </div>
+  `;
+}
+   // Map weather conditions to appropriate icons
+   function getWeatherIcon(weatherMain) {
+        switch (weatherMain) {
+          case "Clear":
+            return "☀️";
+          case "Clouds":
+            return "☁️";
+          case "Rain":
+          case "Drizzle":
+            return "🌧️";
+          case "Thunderstorm":
+            return "⛈️";
+          case "Snow":
+            return "❄️";
+          case "Mist":
+          case "Smoke":
+          case "Haze":
+          case "Dust":
+          case "Fog":
+            return "🌫️";
+          case "Tornado":
+            return "🌪️";
+          default:
+            return "🌡️";
+        }
+      }
+
+      // Determine impact level based on weather conditions and wind speed
+      function determineImpactLevel(weatherMain, windSpeed) {
+        // High impact weather types
+        const severeWeatherTypes = [
+          "Thunderstorm",
+          "Tornado",
+          "Hurricane",
+          "Tropical Storm",
+        ];
+        const highImpactWeatherTypes = ["Snow", "Heavy Rain"];
+
+        // Wind speed thresholds (m/s)
+        const severeWindThreshold = 20.0;
+        const highWindThreshold = 15.0;
+        const moderateWindThreshold = 10.0;
+
+        // Determine impact based on weather and wind
+        if (
+          severeWeatherTypes.includes(weatherMain) ||
+          windSpeed >= severeWindThreshold
+        ) {
+          return "severe";
+        } else if (
+          highImpactWeatherTypes.includes(weatherMain) ||
+          windSpeed >= highWindThreshold
+        ) {
+          return "high";
+        } else if (
+          weatherMain === "Rain" ||
+          weatherMain === "Fog" ||
+          windSpeed >= moderateWindThreshold
+        ) {
+          return "moderate";
+        } else {
+          return "low";
+        }
+      }
+
+      // Get impacts based on impact level
+      function getImpactsForWeather(impact) {
+        switch (impact) {
+          case "low":
+            return [
+              "Normal operations can continue",
+              "Routine maintenance activities can proceed as scheduled",
+              "No significant impact on transportation to/from platform",
+            ];
+          case "moderate":
+            return [
+              "Consider postponing non-essential maintenance",
+              "Ensure all equipment is properly secured",
+              "Monitor conditions for potential deterioration",
+              "Helicopter operations may experience minor delays",
+            ];
+          case "high":
+            return [
+              "Postpone all non-essential activities",
+              "Secure all loose equipment immediately",
+              "Helicopter operations likely to be suspended",
+              "Increase monitoring frequency of all systems",
+              "Prepare for potential evacuation if conditions worsen",
+            ];
+          case "severe":
+            return [
+              "Initiate emergency protocols immediately",
+              "All non-essential operations should cease",
+              "All transportation to/from platform suspended",
+              "Monitor structural integrity continuously",
+              "Prepare evacuation procedures",
+            ];
+          default:
+            return ["Weather impact assessment unavailable"];
+        }
+      }
+      function getAlertClassForImpact(impact) {
+        switch (impact) {
+          case "low":
+            return "alert-success";
+          case "moderate":
+            return "alert-warning";
+          case "high":
+          case "severe":
+            return "alert-danger";
+          default:
+            return "alert-warning";
+        }
+      }
+    </script>
+  </body>
+</html>

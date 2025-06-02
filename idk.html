@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IR Sensor Dashboard - Oil Spill & Gas Leak Detection</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            color: #333;
+        }
+        .header {
+            background-color: #003366;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        h1 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 2.2rem;
+        }
+        h2 {
+            color: #003366;
+            margin: 35px 0 15px;
+            font-weight: 500;
+            text-align: center;
+            font-size: 1.8rem;
+        }
+        .section {
+            margin-bottom: 60px;
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .description {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto 30px;
+            font-size: 16px;
+            color: #555;
+            line-height: 1.7;
+        }
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .chart-wrapper {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(187, 61, 61, 0.05);
+        }
+        .chart-title {
+            text-align: center;
+            font-weight: 500;
+            color: #003366;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .alert-indicator {
+            display: inline-block;
+            background-color: #f08a24;
+            color: white;
+            font-weight: 500;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #eee;
+        }
+        @media (max-width: 768px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 15px;
+            font-size: 14px;
+        }
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            display: inline-block;
+            margin-right: 5px;
+            border-radius: 50%;
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        strong {
+            color: #003366;
+        }
+        .btn {
+            background-color: #f39c12;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: block;
+            margin: 20px auto;
+            text-align: center;
+            max-width: 200px;
+        }
+        .btn:hover {
+            background-color: #e67e22;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>IR Sensor Readings Dashboard</h1>
+</div>
+
+<div class="container">
+    <div class="section">
+        <h2>Oil Spill Detection via IR Sensor</h2>
+        <p class="description">
+            This section displays real-time IR sensor readings before and after an oil spill event.
+            <strong>IR Reflectivity</strong> significantly decreases after a spill occurs (entry 100) due to hydrocarbon presence on water surfaces.
+            Additionally, a <strong>temperature increase</strong> is observed as dark oil absorbs more solar radiation.
+            Red dots indicate detected anomalies that trigger system alerts.
+        </p>
+        <div class="charts-container">
+            <div class="chart-wrapper">
+                <div class="chart-title">IR Reflectivity Readings</div>
+                <canvas id="reflectivityChart"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: rgba(54, 162, 235, 1)"></span>
+                        <span>Normal Range</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: red"></span>
+                        <span>Anomaly</span>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <div class="chart-title">Temperature Readings (°C)</div>
+                <canvas id="temperatureChart"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: rgba(255, 99, 132, 1)"></span>
+                        <span>Temperature</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: red"></span>
+                        <span>Anomaly</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Gas Leak Detection via IR Sensor</h2>
+        <p class="description">
+            This visualization demonstrates how IR sensors detect gas leaks by measuring absorption at specific wavelengths.
+            Each gas has a unique IR absorption signature - <strong>methane</strong> (3.3μm), <strong>propane</strong> (3.4μm), and <strong>CO₂</strong> (4.3μm).
+            The sharp dip in IR intensity during entries 120-150 indicates an active leak event.
+            Note the corresponding <strong>temperature drop</strong> caused by the escaping gas's expansion and cooling effect.
+        </p>
+        <div class="charts-container">
+            <div class="chart-wrapper">
+                <div class="chart-title">Gas-Specific IR Absorption</div>
+                <canvas id="gasChart"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: rgba(255, 99, 132, 1)"></span>
+                        <span>Methane</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: rgba(54, 162, 235, 1)"></span>
+                        <span>Propane</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: rgba(255, 206, 86, 1)"></span>
+                        <span>CO₂</span>
+                    </div>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <div class="chart-title">Temperature Variation During Gas Leak</div>
+                <canvas id="tempChart"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: rgba(75, 192, 192, 1)"></span>
+                        <span>Temperature</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background-color: red"></span>
+                        <span>Anomaly</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn" onclick="downloadData()">Download Data</button>
+
+    <div class="footer">
+        <p>© 2025 Digital Oilfield Technologies | IR Sensor Analysis Platform</p>
+    </div>
+</div>
+
+<script>
+    const labels = Array.from({ length: 200 }, (_, i) => i + 1);
+
+    // ----- OIL SPILL DATA -----
+    const oilReflect = labels.map((_, i) => i < 100
+        ? +(Math.random() * 0.05 + 0.78).toFixed(3)
+        : +(Math.random() * 0.05 + 0.58).toFixed(3));
+    const oilTemp = labels.map((_, i) => i < 100
+        ? +(Math.random() * 0.5 + 28.5).toFixed(2)
+        : +(Math.random() * 0.5 + 30.2).toFixed(2));
+
+    // ----- GAS LEAK DATA -----
+    function generateIRReadings(base, dropStart, dropEnd, dropAmount) {
+        return labels.map((_, i) => {
+            const inDrop = i >= dropStart && i <= dropEnd;
+            return +(base - (inDrop ? dropAmount : 0) - Math.random() * 0.03).toFixed(3);
+        });
+    }
+    const methane = generateIRReadings(0.88, 120, 150, 0.15);
+    const propane = generateIRReadings(0.85, 120, 150, 0.12);
+    const co2     = generateIRReadings(0.90, 120, 150, 0.10);
+    const gasTemp = labels.map((_, i) => {
+        const dip = (i >= 120 && i <= 150) ? 1.5 : 0;
+        return +(28.5 - dip + Math.random() * 0.3).toFixed(2);
+    });
+
+    // ----- Anomaly Detection -----
+    function detectAnomalies(array, threshold) {
+        const anomalies = [];
+        for (let i = 1; i < array.length; i++) {
+            if (Math.abs(array[i] - array[i - 1]) > threshold) {
+                anomalies.push(i);
+            }
+        }
+        return anomalies;
+    }
+    const oilReflectAnoms = detectAnomalies(oilReflect, 0.07);
+    const oilTempAnoms = detectAnomalies(oilTemp, 0.7);
+    const gasTempAnoms = detectAnomalies(gasTemp, 0.5);
+
+    // ----- Chart Setup Functions -----
+    function createChart(canvasId, label, data, color, yLabel, anomalies=[]) {
+    new Chart(document.getElementById(canvasId), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: label,
+                    data: data,
+                    borderColor: color,
+                    backgroundColor: color + '20',
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 1,
+                    borderWidth: 2
+                },
+                {
+                    label: 'Anomaly',
+                    data: data.map((val, i) => anomalies.includes(i) ? val : null),
+                    borderColor: 'transparent',
+                    backgroundColor: 'red',
+                    pointRadius: 6,
+                    pointStyle: 'circle',
+                    showLine: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    title: { display: true, text: yLabel, font: { weight: 'bold' } },
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: { color: '#333' }
+                },
+                x: {
+                    title: { display: true, text: "Entry ID", font: { weight: 'bold' } },
+                    grid: { display: false },
+                    ticks: { color: '#333' }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)'
+                }
+            }
+        }
+    });
+}
+
+function createGasChart() {
+    new Chart(document.getElementById('gasChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Methane (3.3µm)',
+                    data: methane,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    borderWidth: 2
+                },
+                {
+                    label: 'Propane (3.4µm)',
+                    data: propane,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    borderWidth: 2
+                },
+                {
+                    label: 'CO₂ (4.3µm)',
+                    data: co2,
+                    borderColor: 'rgba(255, 206, 86, 1)',
+                    backgroundColor: 'rgba(255, 206, 86, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    title: { display: true, text: "IR Intensity", font: { weight: 'bold' } },
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: { color: '#333' },
+                    min: 0.6 // Set minimum value to make drops more visible
+                },
+                x: {
+                    title: { display: true, text: "Entry ID", font: { weight: 'bold' } },
+                    grid: { display: false },
+                    ticks: { color: '#333' }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    mode: 'index',
+                    intersect: false
+                }
+            }
+        }
+    });
+}
+
+    // ----- Render All Charts -----
+    createChart('reflectivityChart', 'IR Reflectivity', oilReflect, 'rgba(54, 162, 235, 1)', 'Reflectivity Index', oilReflectAnoms);
+    createChart('temperatureChart', 'Temperature (°C)', oilTemp, 'rgba(255, 99, 132, 1)', 'Temperature (°C)', oilTempAnoms);
+    createGasChart();
+    createChart('tempChart', 'Temperature (°C)', gasTemp, 'rgba(75, 192, 192, 1)', 'Temperature (°C)', gasTempAnoms);
+
+    // ----- Data Download Function -----
+    function downloadData() {
+        const data = {
+            labels: labels,
+            oilReflect: oilReflect,
+            oilTemp: oilTemp,
+            methane: methane,
+            propane: propane,
+            co2: co2,
+            gasTemp: gasTemp
+        };
+        const csv = convertToCSV(data);
+        const element = document.createElement('a');
+        element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv));
+        element.setAttribute('download', 'sensor_data.csv');
+        element.style.display = 'none';
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+    }
+
+    function convertToCSV(data) {
+        const header = "Entry ID,Oil Reflectivity,Oil Temperature,Methane,Propane,CO2,Gas Temperature\n";
+        const rows = data.labels.map((label, index) =>
+            `${label},${data.oilReflect[index]},${data.oilTemp[index]},${data.methane[index]},${data.propane[index]},${data.co2[index]},${data.gasTemp[index]}`
+        ).join('\n');
+        return header + rows;
+    }
+</script>
+
+</body>
+</html>

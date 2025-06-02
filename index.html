@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Digital Oilfield - Service Dashboard</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <!-- Add jsPDF library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+      /* PDF Download Notification Styles */
+      .download-notification {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 15px;
+        background-color: #28a745;
+        color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        max-width: 300px;
+        animation: slideIn 0.3s ease-out;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .download-notification.error {
+        background-color: #dc3545;
+      }
+
+      .download-notification .close-btn {
+        cursor: pointer;
+        margin-left: 10px;
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateY(100px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* Style for PDF download buttons */
+      #downloadPdfBtn,
+      #downloadWorkOrderPdf {
+        margin-left: 10px;
+      }
+
+      #downloadPdfBtn i,
+      #downloadWorkOrderPdf i {
+        margin-right: 5px;
+      }
+    </style>
+  </head>
+  <body>
+      <!-- Main Content -->
+      <div class="main-content">
+        <div class="header">
+          <div class="page-title">
+            <h1>Service Dashboard</h1>
+          </div>
+          <div class="header-actions">
+            <div class="search-bar">
+              <i class="fas fa-search"></i>
+              <input type="text" placeholder="Search equipment..." />
+            </div>
+            <div class="actions">
+              <!-- <button class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Work Order
+              </button> -->
+              <!-- <button id="downloadPdfBtn" class="btn btn-primary">
+                <i class="fas fa-file-pdf"></i> Download Report
+              </button>  -->
+              <div class="home-icon">
+                <a href="MainLandingPage.html"><i class="fas fa-home"></i></a>
+              </div>          
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard">
+          <!-- Overview Cards -->
+          <div class="overview-cards">
+            <div class="card">
+              <div class="card-icon warning">
+                <i class="fas fa-exclamation-triangle"></i>
+              </div>
+              <div class="card-info">
+                <h3>Pending Alerts</h3>
+                <p class="card-value">12</p>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-icon danger">
+                <i class="fas fa-wrench"></i>
+              </div>
+              <div class="card-info">
+                <h3>Critical Maintenance</h3>
+                <p class="card-value">3</p>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-icon success">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <div class="card-info">
+                <h3>Healthy Equipment</h3>
+                <p class="card-value">87%</p>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-icon info">
+                <i class="fas fa-calendar"></i>
+              </div>
+              <div class="card-info">
+                <h3>Scheduled Tasks</h3>
+                <p class="card-value">18</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Equipment Health Dashboard -->
+          <div class="section">
+            <div class="section-header">
+              <h2><i class="fas fa-heartbeat"></i> Equipment Health Status</h2>
+              <div class="section-actions">
+                <button id="addEquipmentBtn" class="btn btn-primary">
+                  <i class="fas fa-plus"></i> Add Equipment
+                </button>
+              </div>
+            </div>
+            <div class="equipment-grid">
+              <div class="equipment-card">
+                <div class="equipment-header">
+                  <h3>Pump Station A-42</h3>
+                  <div class="equipment-status healthy">
+                    <i class="fas fa-check-circle"></i> Healthy
+                  </div>
+                </div>
+                <div class="equipment-details">
+                  <div class="parameter">
+                    <span>Vibration</span>
+                    <div class="progress-bar">
+                      <div class="progress" style="width: 35%"></div>
+                    </div>
+                  </div>
+                  <div class="parameter">
+                    <span>Temperature</span>
+                    <div class="progress-bar">
+                      <div class="progress" style="width: 42%"></div>
+                    </div>
+                  </div>
+                  <div class="parameter">
+                    <span>Power</span>
+                    <div class="progress-bar">
+                      <div class="progress" style="width: 60%"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="maintenance-timer">
+                  <i class="fas fa-clock"></i>
+                  <span>Next maintenance: 45 days</span>
+                </div>
+              </div>
+              <div class="equipment-card">
+                <div class="equipment-header">
+                  <h3>Compressor B-17</h3>
+                  <div class="equipment-status warning">
+                    <i class="fas fa-exclamation-circle"></i> Warning
+                  </div>
+                </div>
+                <div class="equipment-details">
+                  <div class="parameter">
+                    <span>Vibration</span>
+                    <div class="progress-bar">
+                      <div class="progress warning" style="width: 78%"></div>
+                    </div>
+                  </div>
+                  <div class="parameter">
+                    <span>Temperature</span>
+                    <div class="progress-bar">
+                      <div class="progress" style="width: 55%"></div>
+                    </div>
+                  </div>
+                  <div class="parameter">
+                    <span>Power</span>
+                    <div class="progress-bar">
+                      <div class="progress" style="width: 62%"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="maintenance-timer warning">
+                  <i class="fas fa-clock"></i>
+                  <span>Next maintenance: 8 days</span>
+                </div>
+              </div>
+              <div class="equipment-card">
+                <div class="equipment-header">
+                  <h3>Well Head C-09</h3>
+                  <div class="equipment-status danger">
+                    <i class="fas fa-exclamation-triangle"></i> Critical
+                  </div>
+                </div>
+                <div class="equipment-details">
+                  <div class="parameter">
+                    <span>Vibration</span>
+                    <div class="progress-bar">
+                      <div class="progress danger" style="width: 92%"></div>
+                    </div>
+                  </div>
+                  <div class="parameter">
+                    <span>Temperature</span>
+                    <div class="progress-bar">
+                      <div class="progress warning" style="width: 75%"></div>
+                    </div>
+                  </div>
+                  <div class="parameter">
+                    <span>Power</span>
+                    <div class="progress-bar">
+                      <div class="progress danger" style="width: 85%"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="maintenance-timer danger">
+                  <i class="fas fa-clock"></i>
+                  <span>Immediate attention required</span>
+                </div>
+              </div>
+              <div class="equipment-card">
+                <div class="equipment-header">
+                  <h3>Storage Tank D-23</h3>
+                  <div class="equipment-status healthy">
+                    <i class="fas fa-check-circle"></i> Healthy
+                  </div>
+                </div>
+                <div class="equipment-details">
+                  <div class="parameter">
+                    <span>Vibration</span>
+                    <div class="progress-bar">
+                      <div class="progress" style="width: 22%"></div>
+                    </div>
+                  </div>
+                  <div class="parameter">
+                    <span>Temperature</span>
+                    <div class="progress-bar">
+                      <div class="progress" style="width: 30%"></div>
+                    </div>
+                  </div>
+                  <div class="parameter">
+                    <span>Power</span>
+                    <div class="progress-bar">
+                      <div class="progress" style="width: 25%"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="maintenance-timer">
+                  <i class="fas fa-clock"></i>
+                  <span>Next maintenance: 62 days</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Two Column Layout -->
+          <div class="two-columns">
+            <!-- Performance Trends -->
+            <div class="section">
+              <div class="section-header">
+                <h2><i class="fas fa-chart-line"></i> Performance Trends</h2>
+              </div>
+              <div class="performance-trends">
+                <div class="chart-container">
+                  <canvas id="performanceChart"></canvas>
+                </div>
+                <div class="chart-legend">
+                  <div class="legend-item">
+                    <div
+                      class="legend-color"
+                      style="background-color: rgba(54, 162, 235, 0.5)"
+                    ></div>
+                    <span>Pump Station A-42</span>
+                  </div>
+                  <div class="legend-item">
+                    <div
+                      class="legend-color"
+                      style="background-color: rgba(255, 206, 86, 0.5)"
+                    ></div>
+                    <span>Compressor B-17</span>
+                  </div>
+                  <div class="legend-item">
+                    <div
+                      class="legend-color"
+                      style="background-color: rgba(255, 99, 132, 0.5)"
+                    ></div>
+                    <span>Well Head C-09</span>
+                  </div>
+                  <div class="legend-item">
+                    <div
+                      class="legend-color"
+                      style="background-color: rgba(75, 192, 192, 0.5)"
+                    ></div>
+                    <span>Storage Tank D-23</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Maintenance KPIs -->
+            <div class="section">
+              <div class="section-header">
+                <h2><i class="fas fa-tachometer-alt"></i> Maintenance KPIs</h2>
+              </div>
+              <div class="kpi-grid">
+                <div class="kpi-card">
+                  <div class="kpi-icon">
+                    <i class="fas fa-clock"></i>
+                  </div>
+                  <div class="kpi-info">
+                    <h4>Mean Time Between Failures</h4>
+                    <p class="kpi-value">458 hours</p>
+                    <p class="kpi-trend positive">
+                      +12% <i class="fas fa-arrow-up"></i>
+                    </p>
+                  </div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-icon">
+                    <i class="fas fa-tools"></i>
+                  </div>
+                  <div class="kpi-info">
+                    <h4>Mean Time To Repair</h4>
+                    <p class="kpi-value">3.2 hours</p>
+                    <p class="kpi-trend positive">
+                      -8% <i class="fas fa-arrow-down"></i>
+                    </p>
+                  </div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-icon">
+                    <i class="fas fa-percentage"></i>
+                  </div>
+                  <div class="kpi-info">
+                    <h4>Equipment Availability</h4>
+                    <p class="kpi-value">94.2%</p>
+                    <p class="kpi-trend positive">
+                      +2.5% <i class="fas fa-arrow-up"></i>
+                    </p>
+                  </div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-icon">
+                    <i class="fas fa-dollar-sign"></i>
+                  </div>
+                  <div class="kpi-info">
+                    <h4>Maintenance Cost</h4>
+                    <p class="kpi-value">$24,580</p>
+                    <p class="kpi-trend negative">
+                      +5.3% <i class="fas fa-arrow-up"></i>
+                    </p>
+                  </div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-icon">
+                    <i class="fas fa-check-double"></i>
+                  </div>
+                  <div class="kpi-info">
+                    <h4>Preventive vs Reactive</h4>
+                    <p class="kpi-value">72:28</p>
+                    <p class="kpi-trend positive">
+                      +5% <i class="fas fa-arrow-up"></i>
+                    </p>
+                  </div>
+                </div>
+                <div class="kpi-card">
+                  <div class="kpi-icon">
+                    <i class="fas fa-tasks"></i>
+                  </div>
+                  <div class="kpi-info">
+                    <h4>PM Compliance</h4>
+                    <p class="kpi-value">88%</p>
+                    <p class="kpi-trend positive">
+                      +4% <i class="fas fa-arrow-up"></i>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Maintenance Scheduler -->
+          <div class="section">
+            <div class="section-header">
+              <h2><i class="fas fa-calendar-alt"></i> Maintenance Scheduler</h2>
+            </div>
+            <div class="maintenance-scheduler">
+              <div class="calendar-header">
+                <button class="btn btn-calendar">
+                  <i class="fas fa-chevron-left"></i>
+                </button>
+                <h3>April 2025</h3>
+                <button class="btn btn-calendar">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+              </div>
+              <div class="calendar-weekdays">
+                <div>Sun</div>
+                <div>Mon</div>
+                <div>Tue</div>
+                <div>Wed</div>
+                <div>Thu</div>
+                <div>Fri</div>
+                <div>Sat</div>
+              </div>
+              <div class="calendar-days">
+                <div class="prev-month">30</div>
+                <div class="prev-month">31</div>
+                <div>1</div>
+                <div>2</div>
+                <div class="current-day">3</div>
+                <div>4</div>
+                <div>5</div>
+                <div>6</div>
+                <div>7</div>
+                <div>8</div>
+                <div
+                  class="has-event"
+                  data-tooltip="Pump Inspection - Station A-42"
+                >
+                  9
+                </div>
+                <div>10</div>
+                <div>11</div>
+                <div>12</div>
+                <div
+                  class="has-event critical"
+                  data-tooltip="Emergency Maintenance - Well Head C-09"
+                >
+                  13
+                </div>
+                <div>14</div>
+                <div>15</div>
+                <div>16</div>
+                <div>17</div>
+                <div
+                  class="has-event"
+                  data-tooltip="Preventive Maintenance - Compressor B-17"
+                >
+                  18
+                </div>
+                <div>19</div>
+                <div>20</div>
+                <div>21</div>
+                <div>22</div>
+                <div>23</div>
+                <div>24</div>
+                <div>25</div>
+                <div
+                  class="has-event"
+                  data-tooltip="Quarterly Inspection - Storage Tank D-23"
+                >
+                  26
+                </div>
+                <div>27</div>
+                <div>28</div>
+                <div>29</div>
+                <div>30</div>
+                <div class="next-month">1</div>
+                <div class="next-month">2</div>
+                <div class="next-month">3</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Anomaly Detection & Work Orders -->
+          <div class="two-columns">
+            <!-- Anomaly Detection -->
+            <div class="section">
+              <div class="section-header">
+                <h2><i class="fas fa-search-minus"></i> Anomaly Detection</h2>
+              </div>
+              <div class="anomaly-list">
+                <div class="anomaly-card critical">
+                  <div class="anomaly-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                  </div>
+                  <div class="anomaly-info">
+                    <div class="anomaly-header">
+                      <h4>Critical: Well Head C-09</h4>
+                      <span class="time">2 hours ago</span>
+                    </div>
+                    <p>
+                      Excessive vibration detected. Estimated failure in 36
+                      hours.
+                    </p>
+                    <div class="anomaly-actions">
+                      <button class="btn btn-sm">Investigate</button>
+                      <button class="btn btn-sm btn-primary">
+                        Create Work Order
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="anomaly-card warning">
+                  <div class="anomaly-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                  </div>
+                  <div class="anomaly-info">
+                    <div class="anomaly-header">
+                      <h4>Warning: Compressor B-17</h4>
+                      <span class="time">8 hours ago</span>
+                    </div>
+                    <p>Unusual temperature fluctuations. Monitor closely.</p>
+                    <div class="anomaly-actions">
+                      <button class="btn btn-sm">Investigate</button>
+                      <button class="btn btn-sm btn-primary">
+                        Create Work Order
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="anomaly-card">
+                  <div class="anomaly-icon">
+                    <i class="fas fa-info-circle"></i>
+                  </div>
+                  <div class="anomaly-info">
+                    <div class="anomaly-header">
+                      <h4>Info: Pump Station A-42</h4>
+                      <span class="time">1 day ago</span>
+                    </div>
+                    <p>
+                      Slight efficiency decrease. No immediate action required.
+                    </p>
+                    <div class="anomaly-actions">
+                      <button class="btn btn-sm">Investigate</button>
+                      <button class="btn btn-sm btn-primary">
+                        Create Work Order
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Work Order Generator -->
+            <div class="section">
+              <div class="section-header">
+                <h2>
+                  <i class="fas fa-file-invoice"></i> Work Order Generator
+                </h2>
+              </div>
+              <div class="work-order-form">
+                <div class="form-group">
+                  <label for="equipment">Equipment</label>
+                  <select id="equipment" class="form-control">
+                    <option value="">Select Equipment</option>
+                    <option value="pump-a42">Pump Station A-42</option>
+                    <option value="compressor-b17">Compressor B-17</option>
+                    <option value="wellhead-c09" selected>
+                      Well Head C-09
+                    </option>
+                    <option value="storage-d23">Storage Tank D-23</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="maintenance-type">Maintenance Type</label>
+                  <select id="maintenance-type" class="form-control">
+                    <option value="preventive">Preventive</option>
+                    <option value="corrective" selected>Corrective</option>
+                    <option value="predictive">Predictive</option>
+                    <option value="emergency">Emergency</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="priority">Priority</label>
+                  <select id="priority" class="form-control">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high" selected>High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="description">Description</label>
+                  <textarea id="description" class="form-control" rows="3">
+Replace vibration dampener and inspect bearings on Well Head C-09. Excessive vibration detected.</textarea
+                  >
+                </div>
+                <div class="form-group">
+                  <label for="technician">Assign Technician</label>
+                  <select id="technician" class="form-control">
+                    <option value="">Select Technician</option>
+                    <option value="harsj-jha" selected>Harsh Kumar Jha</option>
+                    <option value="nandik-dawar">Nandik Dawar</option>
+                    <option value="shobhit-shukla">Shobhit Shukla</option>
+                  </select>
+                </div>
+                <div class="form-actions">
+                  <button class="btn btn-secondary">Cancel</button>
+                  <button class="btn btn-primary">Generate Work Order</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Work Order Preview Modal -->
+    <div class="modal" id="workOrderModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Work Order: WO-2025-0428</h2>
+          <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+          <div class="work-order-preview">
+            <div class="work-order-header">
+              <div class="work-order-logo">
+                <i class="fas fa-oil-well"></i> Digital Oilfield
+              </div>
+              <div class="work-order-title">
+                <h3>MAINTENANCE WORK ORDER</h3>
+                <p>
+                  WO-2025-0428 |
+                  <span class="priority high">HIGH PRIORITY</span>
+                </p>
+              </div>
+            </div>
+            <div class="work-order-details">
+              <div class="detail-row">
+                <div class="detail-item">
+                  <label>Equipment:</label>
+                  <p>Well Head C-09</p>
+                </div>
+                <div class="detail-item">
+                  <label>Location:</label>
+                  <p>Field Sector 3, Area B</p>
+                </div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-item">
+                  <label>Type:</label>
+                  <p>Corrective Maintenance</p>
+                </div>
+                <div class="detail-item">
+                  <label>Scheduled Date:</label>
+                  <p>April 13, 2025</p>
+                </div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-item">
+                  <label>Assigned To:</label>
+                  <p>Harsh Kumar Jha</p>
+                </div>
+                <div class="detail-item">
+                  <label>Estimated Duration:</label>
+                  <p>4 hours</p>
+                </div>
+              </div>
+              <div class="detail-full">
+                <label>Description:</label>
+                <p>
+                  Replace vibration dampener and inspect bearings on Well Head
+                  C-09. Excessive vibration detected.
+                </p>
+              </div>
+              <div class="detail-full">
+                <label>Required Parts:</label>
+                <ul>
+                  <li>WH-VD35 Vibration Dampener</li>
+                  <li>BB-440 Ball Bearings (x2)</li>
+                  <li>HT-55 Thermal Paste</li>
+                </ul>
+              </div>
+              <div class="detail-full">
+                <label>Safety Precautions:</label>
+                <p>
+                  Ensure pressure is released before disassembly. Wear
+                  appropriate PPE including helmet, gloves, and safety glasses.
+                </p>
+              </div>
+            </div>
+            <div class="work-order-footer">
+              <div class="signature-area">
+                <div class="signature-box">
+                  <label>Technician Signature:</label>
+                  <div class="signature-line"></div>
+                </div>
+                <div class="signature-box">
+                  <label>Supervisor Approval:</label>
+                  <div class="signature-line"></div>
+                </div>
+              </div>
+              <div class="qr-code">
+                <div class="qr-placeholder"></div>
+                <p>Scan for details</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="closeModal">Close</button>
+          <!-- Modified Work Order PDF Download Button -->
+          <button id="downloadWorkOrderPdf" class="btn btn-primary">
+            <i class="fas fa-file-download"></i> Download PDF
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add this modal at the bottom of the file, before the closing body tag -->
+    <div class="modal" id="addEquipmentModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Add New Equipment</h2>
+          <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+          <div class="add-equipment-form">
+            <div class="form-group">
+              <label for="equipmentName">Equipment Name</label>
+              <input
+                type="text"
+                id="equipmentName"
+                class="form-control"
+                placeholder="e.g., Pump Station X-01"
+              />
+            </div>
+            <div class="form-group">
+              <label for="equipmentType">Equipment Type</label>
+              <select id="equipmentType" class="form-control">
+                <option value="pump">Pump Station</option>
+                <option value="compressor">Compressor</option>
+                <option value="wellhead">Well Head</option>
+                <option value="tank">Storage Tank</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="equipmentLocation">Location</label>
+              <input
+                type="text"
+                id="equipmentLocation"
+                class="form-control"
+                placeholder="e.g., Field Sector 4, Area C"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="cancelAddEquipment">
+            Cancel
+          </button>
+          <button class="btn btn-primary" id="confirmAddEquipment">
+            Add Equipment
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Make jsPDF available globally
+      window.jsPDF = window.jspdf.jsPDF;
+    </script>
+    <script src="script.js"></script>
+  </body>
+</html>
