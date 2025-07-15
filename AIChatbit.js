@@ -3,7 +3,7 @@ import cors from "cors";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Move API key to environment variable in production
-const API_KEY = "";//PUT THE GEMINI API KEY IN THE BRACKET TO ACCESS THE AI ASSITENT FEATURE 
+const API_KEY = "";//PUT THE GEMINI API KEY IN THE BRACKET TO ACCESS THE AI ASSITENT FEATURE LIKE AIzaSyCGClE6FwMOQxdiw3CXNO1gDME9Fu0F2xE
 console.log("API key loaded:", API_KEY ? "Yes" : "No");
 console.log("First few chars:", API_KEY ? API_KEY.substring(0, 3) + "..." : "None");
 
